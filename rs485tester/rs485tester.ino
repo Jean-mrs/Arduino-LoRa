@@ -1,8 +1,8 @@
 #include <ArduinoSTL.h>
 
 #include <SoftwareSerial.h>
-#define SSerialRX        10  //Serial Rx pin
-#define SSerialTX        11  //Serial Tx pin
+#define SSerialRX        4  //Serial Rx pin
+#define SSerialTX        5  //Serial Tx pin
 
 #define SSerialTxControl 3   //RS485 Direction control
 
