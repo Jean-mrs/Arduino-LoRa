@@ -1,3 +1,5 @@
+#include <ArduinoSTL.h>
+
 #include <SoftwareSerial.h>
 #define SSerialRX        10  //Serial Rx pin
 #define SSerialTX        11  //Serial Tx pin
@@ -10,7 +12,8 @@ SoftwareSerial RS485Serial(SSerialRX, SSerialTX); // Mapeia RX, TX para o Serial
 
 byte longbyteReceived[11];
 byte byteReceived[8];
-byte resquest2send[121];
+std::vector<unsigned char> bytes2send;
+//byte resquest2send[121];
 
 byte msgs[13][8] = {
   {0x01, 0x03, 0x00, 0x00, 0x00, 0x02, 0xC4, 0x0B}, //Registrador 0x0000 Total KWh
@@ -52,7 +55,6 @@ void setup() {
   digitalWrite(SSerialTxControl, RS485Transmit);  // Inicia com modo de transmissão ativado
 }
 
-
 void loop() {
   for (int i = 0; i < 13; i++) {
     if (RS485Serial.isListening()) {
@@ -78,28 +80,22 @@ void loop() {
     }
     Serial.println();
 
-    if (i < 6) {      //Caso tenha mensagem em mais de um registrador(Data Number 2)
+    if (i < 6) {    //Caso tenha mensagem em mais de um registrador(Data Number 2)
       Serial.print("Mensagem recebida: ");
       int n = sizeof(longbyteReceived);
       for (int k = 0; k < n; k++) {
-        longbyteReceived[k] = RS485Serial.read();    // Visualizacao de mensagem hexadecimal recebida no monitor Serial
+        longbyteReceived[k] = RS485Serial.read();  // Visualizacao de mensagem hexadecimal recebida no monitor Serial
         Serial.print("0x");
         Serial.print(longbyteReceived[k], HEX);
         Serial.print(" ");
       }
       Serial.println();
-      int x = i * 11;
 
-      for (int l = 0 + x; l < 11 + x; l++) {
-        for (int k = 0; k < 11; k++) {
-          resquest2send[l] = longbyteReceived[k];
-          Serial.print(longbyteReceived[k], HEX);
-          Serial.print(" ");
-        }
-        
+      for (int k = 0; k < 11; k++) {
+        bytes2send.push_back(longbyteReceived[k]); // Adiciona mensagem lida ao array final
       }
     }
-    else {
+    else {  //Caso tenha mensagem em apenas um registrador(Data Number 1)
       Serial.print("Mensagem recebida: ");
       int n = sizeof(byteReceived);
       for (int k = 0; k < n; k++) {
@@ -108,87 +104,86 @@ void loop() {
         Serial.print(byteReceived[k], HEX);
         Serial.print(" ");
       }
-
-      for (int l =  66 + (i - 6) * 8; l < 74 + (i - 6) * 8; l++) {
-        for (int k = 0; k < 8; k++) {
-          resquest2send[l] = byteReceived[k];
-        }
+      Serial.println();
+      
+      for (int k = 0; k < 8; k++) {
+        bytes2send.push_back(byteReceived[k]); // Adiciona mensagem lida ao array final
       }
 
     }
     Serial.println();
     Serial.println("#######################################################");
   }
-  int n = sizeof(resquest2send);
-  for (int k = 0; k < n; k++) {
+
+  int n = sizeof(bytes2send);
+  for (int k = 0; k < 122; k++) { // Printar mensagem final
     Serial.print("0x");
-    Serial.print(resquest2send[k], HEX);
+    Serial.print(bytes2send[k], HEX);
     Serial.print(" ");
   }
   while (1) {}
-
-  //////////////////////////////////////////////////////////////
-  /*
-    Serial.println();
-    Serial.println("Enviando request...");
-    digitalWrite(SSerialTxControl, RS485Transmit);  // Habilita RS485 para Transmitir
-    delay(500);
-    RS485Serial.write(msg6, 8); // Escreve mensagens a enviar
-    Serial.print("Mensagem enviada: ");
-
-    for (int i = 0; i < sizeof(msg6); i++) {
-      Serial.print("0x");
-      Serial.print(msg6[i], HEX);
-      Serial.print(" ");
-    }
-
-    Serial.println();
-
-
-
-    digitalWrite(SSerialTxControl, RS485Receive);  // Enable RS485 to receive
-    Serial.print("Aguardando a resposta");
-    while (!RS485Serial.available()) {
-      Serial.print(".");
-      delay(500);
-    }
-    Serial.println();
-    Serial.print("Mensagem recebida: ");
-    int n2 = sizeof(byteReceived2);
-    for (int i = 0; i < n2; i++) {
-      byteReceived2[i] = RS485Serial.read();    // Read received byte
-      Serial.print("0x");
-      Serial.print(byteReceived2[i], HEX);
-      Serial.print(" ");
-    }
-    ///////////////////////////////////////////////////////////////
-
-    Serial.println();
-    long value_4bytes;
-    value_4bytes = ((long)(byteReceived2[3]) << 56)
-                   + ((long)(byteReceived2[4]) << 48)
-                   + ((long)(byteReceived2[5]) << 40)
-                   + ((long)(byteReceived2[6]) << 32)
-                   + ((long)(byteReceived[3]) << 24)
-                   + ((long)(byteReceived[4]) << 16)
-                   + ((long)(byteReceived[5]) << 8)
-                   + ((long)(byteReceived[6]));
-    //Serial.print("Tensão: ");
-    Serial.print(value_4bytes / 100.0);
-    Serial.print("(Kwh)");
-
-
-    /*Serial.println();
-      long value_2bytes;
-      value_2bytes = ((long)(byteReceived[3]) << 8)
-            + ((long)(byteReceived[4]));
-      Serial.print("Tensão: ");
-      Serial.print(value_2bytes / 10.0);
-      Serial.print("(V)");
-
-
-    Serial.println();
-    Serial.println("#######################################################");
-    delay(5000);
-  */
 }
+//////////////////////////////////////////////////////////////
+/*
+  Serial.println();
+  Serial.println("Enviando request...");
+  digitalWrite(SSerialTxControl, RS485Transmit);  // Habilita RS485 para Transmitir
+  delay(500);
+  RS485Serial.write(msg6, 8); // Escreve mensagens a enviar
+  Serial.print("Mensagem enviada: ");
+
+  for (int i = 0; i < sizeof(msg6); i++) {
+    Serial.print("0x");
+    Serial.print(msg6[i], HEX);
+    Serial.print(" ");
+  }
+
+  Serial.println();
+
+
+
+  digitalWrite(SSerialTxControl, RS485Receive);  // Enable RS485 to receive
+  Serial.print("Aguardando a resposta");
+  while (!RS485Serial.available()) {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println();
+  Serial.print("Mensagem recebida: ");
+  int n2 = sizeof(byteReceived2);
+  for (int i = 0; i < n2; i++) {
+    byteReceived2[i] = RS485Serial.read();    // Read received byte
+    Serial.print("0x");
+    Serial.print(byteReceived2[i], HEX);
+    Serial.print(" ");
+  }
+  ///////////////////////////////////////////////////////////////
+
+  Serial.println();
+  long value_4bytes;
+  value_4bytes = ((long)(byteReceived2[3]) << 56)
+                 + ((long)(byteReceived2[4]) << 48)
+                 + ((long)(byteReceived2[5]) << 40)
+                 + ((long)(byteReceived2[6]) << 32)
+                 + ((long)(byteReceived[3]) << 24)
+                 + ((long)(byteReceived[4]) << 16)
+                 + ((long)(byteReceived[5]) << 8)
+                 + ((long)(byteReceived[6]));
+  //Serial.print("Tensão: ");
+  Serial.print(value_4bytes / 100.0);
+  Serial.print("(Kwh)");
+
+
+  /*Serial.println();
+    long value_2bytes;
+    value_2bytes = ((long)(byteReceived[3]) << 8)
+          + ((long)(byteReceived[4]));
+    Serial.print("Tensão: ");
+    Serial.print(value_2bytes / 10.0);
+    Serial.print("(V)");
+
+
+  Serial.println();
+  Serial.println("#######################################################");
+  delay(5000);
+*/
