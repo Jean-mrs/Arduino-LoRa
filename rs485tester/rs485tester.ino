@@ -92,7 +92,9 @@ void loop() {
       Serial.println();
 
       for (int k = 0; k < 11; k++) {
-        bytes2send.push_back(longbyteReceived[k]); // Adiciona mensagem lida ao array final
+        if (k > 2 and k < 9) {
+          bytes2send.push_back(longbyteReceived[k]); // Adiciona mensagem lida ao array final
+        }
       }
     }
     else {  //Caso tenha mensagem em apenas um registrador(Data Number 1)
@@ -105,9 +107,11 @@ void loop() {
         Serial.print(" ");
       }
       Serial.println();
-      
+
       for (int k = 0; k < 8; k++) {
-        bytes2send.push_back(byteReceived[k]); // Adiciona mensagem lida ao array final
+        if (k > 2 and k < 6) {
+          bytes2send.push_back(byteReceived[k]); // Adiciona mensagem lida ao array final
+        }
       }
 
     }
@@ -115,8 +119,7 @@ void loop() {
     Serial.println("#######################################################");
   }
 
-  int n = sizeof(bytes2send);
-  for (int k = 0; k < 122; k++) { // Printar mensagem final
+  for (int k = 0; k < 57; k++) { // Printar mensagem final
     Serial.print("0x");
     Serial.print(bytes2send[k], HEX);
     Serial.print(" ");

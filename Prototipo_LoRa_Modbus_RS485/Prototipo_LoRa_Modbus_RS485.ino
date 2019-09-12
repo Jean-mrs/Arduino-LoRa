@@ -16,7 +16,7 @@ SoftwareSerial RS485Serial(SSerialRX, SSerialTX); // Mapeia RX, TX para o Serial
 byte longbyteReceived[11];
 byte byteReceived[8];
 std::vector<uint8_t> bytes2send;
-static uint8_t data[121]; 
+static uint8_t data[4];
 
 byte msgs[13][8] = {
   {0x01, 0x03, 0x00, 0x00, 0x00, 0x02, 0xC4, 0x0B}, //Registrador 0x0000 Total KWh
@@ -35,43 +35,45 @@ byte msgs[13][8] = {
 };
 
 void requestModbus() {
-  for (int i = 0; i < 13; i++) {
+  for (int i = 0; i < 1; i++) {
     if (RS485Serial.isListening()) {
-      Serial.println("Enviando request...");
+      Serial.println(F("Enviando request..."));
       digitalWrite(SSerialTxControl, RS485Transmit);  // Habilita RS485 para Transmitir
       delay(500);
       RS485Serial.write(msgs[i], 8); // Escreve mensagens a enviar
-      Serial.print("Mensagem enviada: ");
+      Serial.print(F("Mensagem enviada: "));
 
       for (int j = 0; j < sizeof(msgs[i]); j++) { //Visualizacao de mensagem hexadecimal enviada no monitor Serial
-        Serial.print("0x");
+        Serial.print(F("0x"));
         Serial.print(msgs[i][j], HEX);
-        Serial.print(" ");
+        Serial.print(F(" "));
       }
       Serial.println();
     }
     digitalWrite(SSerialTxControl, RS485Receive);  // Habilita RS485 para receber mensagem do Smart Meter
 
-    Serial.print("Aguardando a resposta");
+    Serial.print(F("Aguardando a resposta"));
     while (!RS485Serial.available()) { //Loop de aguardo ate que seja estabelecida conexao
-      Serial.print(".");
+      Serial.print(F("."));
       delay(500);
     }
     Serial.println();
 
     if (i < 6) {    //Caso tenha mensagem em mais de um registrador(Data Number 2)
-      Serial.print("Mensagem recebida: ");
+      Serial.print(F("Mensagem recebida: "));
       int n = sizeof(longbyteReceived);
       for (int k = 0; k < n; k++) {
         longbyteReceived[k] = RS485Serial.read();  // Visualizacao de mensagem hexadecimal recebida no monitor Serial
-        Serial.print("0x");
+        Serial.print(F("0x"));
         Serial.print(longbyteReceived[k], HEX);
-        Serial.print(" ");
+        Serial.print(F(" "));
       }
       Serial.println();
 
       for (int k = 0; k < 11; k++) {
-        bytes2send.push_back(longbyteReceived[k]); // Adiciona mensagem lida ao array final
+        if (k > 2 and k < 9) {
+          bytes2send.push_back(longbyteReceived[k]); // Adiciona mensagem lida ao array final
+        }
       }
     }
     else {  //Caso tenha mensagem em apenas um registrador(Data Number 1)
@@ -79,31 +81,33 @@ void requestModbus() {
       int n = sizeof(byteReceived);
       for (int k = 0; k < n; k++) {
         byteReceived[k] = RS485Serial.read();    // Visualizacao de mensagem hexadecimal recebida no monitor Serial
-        Serial.print("0x");
+        Serial.print(F("0x"));
         Serial.print(byteReceived[k], HEX);
-        Serial.print(" ");
+        Serial.print(F(" "));
       }
       Serial.println();
 
       for (int k = 0; k < 8; k++) {
-        bytes2send.push_back(byteReceived[k]); // Adiciona mensagem lida ao array final
+        if (k > 2 and k < 6) {
+          bytes2send.push_back(byteReceived[k]); // Adiciona mensagem lida ao array final
+        }
       }
 
     }
     Serial.println();
-    Serial.println("#######################################################");
+    Serial.println(F("#######################################################"));
   }
 
   int n = sizeof(bytes2send);
-  for (int k = 0; k < 122; k++) { // Printar mensagem final
-    Serial.print("0x");
+  for (int k = 0; k < 6; k++) { // Printar mensagem final
+    Serial.print(F("0x"));
     Serial.print(bytes2send[k], HEX);
-    Serial.print(" ");
+    Serial.print(F(" "));
   }
-  
-  //for (int x = 0; x<122; x++){
-   // data[x] = (uint8_t*)bytes2send[x];
-  //}
+  Serial.println();
+  for (int x = 0; x < 6; x++) {
+    data[x] = (uint8_t*)bytes2send[x];
+  }
 }
 
 /////////////////////////Configuracao de comunicacao LoRa /////////////////////////
@@ -238,7 +242,7 @@ void do_send(osjob_t* j) {
     Serial.println(F("OP_TXRXPEND, not sending"));
   } else {
     // Prepare upstream data transmission at the next possible time.
-    LMIC_setTxData2(1, data, sizeof(data) - 1, 0);
+    LMIC_setTxData2(1, mydata, sizeof(mydata) - 1, 0);
     Serial.println(F("Packet queued"));
     Serial.println(LMIC.freq);
   }
@@ -305,12 +309,12 @@ void setup() {
 
   //Comeca a receber mensagem do modbus
   requestModbus();
-  
+
   // Start job
   do_send(&sendjob);
 }
 
 
 void loop() {
-    os_runloop_once();
+  os_runloop_once();
 }
