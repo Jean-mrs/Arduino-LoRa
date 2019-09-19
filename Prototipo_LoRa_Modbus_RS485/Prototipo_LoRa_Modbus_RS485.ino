@@ -1,7 +1,7 @@
 #include <SPI.h>
 #include <lmic.h>
 #include <hal/hal.h>
-#include <ArduinoSTL.h>
+#include <Vector.h>
 #include <SoftwareSerial.h>
 
 /////////////////////////Configuracao de comunicacao Modbus em RS485 /////////////////////////
@@ -12,19 +12,16 @@
 #define RS485Receive     LOW
 SoftwareSerial RS485Serial(SSerialRX, SSerialTX); // Mapeia RX, TX para o Serial do conversor
 
-//static_assert(std::is_same<unsigned char, uint8_t>::value, "uint8_t is not unsigned char");
-byte longbyteReceived[11];
-byte byteReceived[8];
-std::vector<uint8_t> bytes2send;
-static uint8_t data[4];
+Vector<byte> bytes2send;
+uint8_t data[45];
 
-byte msgs[13][8] = {
+byte msgs[9][8] = {
   {0x01, 0x03, 0x00, 0x00, 0x00, 0x02, 0xC4, 0x0B}, //Registrador 0x0000 Total KWh
   {0x01, 0x03, 0x00, 0x01, 0x00, 0x02, 0x95, 0xCB}, //Registrador 0x0001 Total kwh
-  {0x01, 0x03, 0x00, 0x08, 0x00, 0x02, 0x45, 0xC9}, //Registrador 0x0008 Export kWh
-  {0x01, 0x03, 0x00, 0x09, 0x00, 0x02, 0x14, 0x09}, //Registrador 0x0009 Export kWh
-  {0x01, 0x03, 0x00, 0x0A, 0x00, 0x02, 0xE4, 0x09}, //Registrador 0x000A Import KWh
-  {0x01, 0x03, 0x00, 0x0B, 0x00, 0x02, 0xB5, 0xC9}, //Registrador 0x000B Import KWh
+  //{0x01, 0x03, 0x00, 0x08, 0x00, 0x02, 0x45, 0xC9}, //Registrador 0x0008 Export kWh
+  //{0x01, 0x03, 0x00, 0x09, 0x00, 0x02, 0x14, 0x09}, //Registrador 0x0009 Export kWh
+  //{0x01, 0x03, 0x00, 0x0A, 0x00, 0x02, 0xE4, 0x09}, //Registrador 0x000A Import KWh
+  //{0x01, 0x03, 0x00, 0x0B, 0x00, 0x02, 0xB5, 0xC9}, //Registrador 0x000B Import KWh
   {0x01, 0x03, 0x00, 0x0C, 0x00, 0x01, 0x44, 0x09}, //Registrador 0x000C Voltage V
   {0x01, 0x03, 0x00, 0x0D, 0x00, 0x01, 0x15, 0xC9}, //Registrador 0x000D Current A
   {0x01, 0x03, 0x00, 0x0E, 0x00, 0x01, 0xE5, 0xC9}, //Registrador 0x000E Active Power kW
@@ -35,79 +32,77 @@ byte msgs[13][8] = {
 };
 
 void requestModbus() {
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 9; i++) {
     if (RS485Serial.isListening()) {
-      Serial.println(F("Enviando request..."));
+      Serial.println("Enviando request...");
       digitalWrite(SSerialTxControl, RS485Transmit);  // Habilita RS485 para Transmitir
       delay(500);
       RS485Serial.write(msgs[i], 8); // Escreve mensagens a enviar
-      Serial.print(F("Mensagem enviada: "));
+      Serial.print("Mensagem enviada: ");
 
       for (int j = 0; j < sizeof(msgs[i]); j++) { //Visualizacao de mensagem hexadecimal enviada no monitor Serial
-        Serial.print(F("0x"));
+        Serial.print("0x");
         Serial.print(msgs[i][j], HEX);
-        Serial.print(F(" "));
+        Serial.print(" ");
       }
       Serial.println();
     }
     digitalWrite(SSerialTxControl, RS485Receive);  // Habilita RS485 para receber mensagem do Smart Meter
 
-    Serial.print(F("Aguardando a resposta"));
+    Serial.print("Aguardando a resposta");
     while (!RS485Serial.available()) { //Loop de aguardo ate que seja estabelecida conexao
-      Serial.print(F("."));
+      Serial.print(".");
       delay(500);
     }
     Serial.println();
 
     if (i < 6) {    //Caso tenha mensagem em mais de um registrador(Data Number 2)
-      Serial.print(F("Mensagem recebida: "));
+      Serial.print("Mensagem recebida: ");
+      byte longbyteReceived[11];
       int n = sizeof(longbyteReceived);
       for (int k = 0; k < n; k++) {
         longbyteReceived[k] = RS485Serial.read();  // Visualizacao de mensagem hexadecimal recebida no monitor Serial
-        Serial.print(F("0x"));
+        Serial.print("0x");
         Serial.print(longbyteReceived[k], HEX);
-        Serial.print(F(" "));
+        Serial.print(" ");
       }
       Serial.println();
 
       for (int k = 0; k < 11; k++) {
         if (k > 2 and k < 9) {
-          bytes2send.push_back(longbyteReceived[k]); // Adiciona mensagem lida ao array final
+          bytes2send.PushBack(longbyteReceived[k]); // Adiciona mensagem lida ao array final
         }
       }
     }
     else {  //Caso tenha mensagem em apenas um registrador(Data Number 1)
+      byte byteReceived[8];
       Serial.print("Mensagem recebida: ");
       int n = sizeof(byteReceived);
       for (int k = 0; k < n; k++) {
         byteReceived[k] = RS485Serial.read();    // Visualizacao de mensagem hexadecimal recebida no monitor Serial
-        Serial.print(F("0x"));
+        Serial.print("0x");
         Serial.print(byteReceived[k], HEX);
-        Serial.print(F(" "));
+        Serial.print(" ");
       }
       Serial.println();
 
       for (int k = 0; k < 8; k++) {
         if (k > 2 and k < 6) {
-          bytes2send.push_back(byteReceived[k]); // Adiciona mensagem lida ao array final
+          bytes2send.PushBack(byteReceived[k]); // Adiciona mensagem lida ao array final
         }
       }
-
     }
     Serial.println();
-    Serial.println(F("#######################################################"));
+    Serial.println("#######################################################");
   }
 
-  int n = sizeof(bytes2send);
-  for (int k = 0; k < 6; k++) { // Printar mensagem final
-    Serial.print(F("0x"));
-    Serial.print(bytes2send[k], HEX);
-    Serial.print(F(" "));
+  for (int k = 0; k < 45; k++) { // Printar mensagem final
+    data[k] = (uint8_t)bytes2send[k];
+    Serial.print("0x");
+    Serial.print(data[k], HEX);
+    Serial.print(" ");
   }
   Serial.println();
-  for (int x = 0; x < 6; x++) {
-    data[x] = (uint8_t*)bytes2send[x];
-  }
 }
 
 /////////////////////////Configuracao de comunicacao LoRa /////////////////////////
@@ -242,7 +237,7 @@ void do_send(osjob_t* j) {
     Serial.println(F("OP_TXRXPEND, not sending"));
   } else {
     // Prepare upstream data transmission at the next possible time.
-    LMIC_setTxData2(1, mydata, sizeof(mydata) - 1, 0);
+    LMIC_setTxData2(1, data, sizeof(data) - 1, 0);
     Serial.println(F("Packet queued"));
     Serial.println(LMIC.freq);
   }

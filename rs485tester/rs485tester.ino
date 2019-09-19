@@ -1,4 +1,4 @@
-#include <ArduinoSTL.h>
+#include <Vector.h>
 
 #include <SoftwareSerial.h>
 #define SSerialRX        4  //Serial Rx pin
@@ -12,7 +12,7 @@ SoftwareSerial RS485Serial(SSerialRX, SSerialTX); // Mapeia RX, TX para o Serial
 
 byte longbyteReceived[11];
 byte byteReceived[8];
-std::vector<unsigned char> bytes2send;
+Vector<byte> bytes2send;
 //byte resquest2send[121];
 
 byte msgs[13][8] = {
@@ -93,7 +93,7 @@ void loop() {
 
       for (int k = 0; k < 11; k++) {
         if (k > 2 and k < 9) {
-          bytes2send.push_back(longbyteReceived[k]); // Adiciona mensagem lida ao array final
+          bytes2send.PushBack(longbyteReceived[k]); // Adiciona mensagem lida ao array final
         }
       }
     }
@@ -110,7 +110,7 @@ void loop() {
 
       for (int k = 0; k < 8; k++) {
         if (k > 2 and k < 6) {
-          bytes2send.push_back(byteReceived[k]); // Adiciona mensagem lida ao array final
+          bytes2send.PushBack(byteReceived[k]); // Adiciona mensagem lida ao array final
         }
       }
 
