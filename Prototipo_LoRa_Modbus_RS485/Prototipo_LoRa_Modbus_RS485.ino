@@ -13,7 +13,7 @@
 SoftwareSerial RS485Serial(SSerialRX, SSerialTX); // Mapeia RX, TX para o Serial do conversor
 
 Vector<byte> bytes2send;
-uint8_t data[45];
+uint8_t data[22];
 
 byte msgs[9][8] = {
   {0x01, 0x03, 0x00, 0x00, 0x00, 0x02, 0xC4, 0x0B}, //Registrador 0x0000 Total KWh
@@ -56,9 +56,9 @@ void requestModbus() {
     }
     Serial.println();
 
-    if (i < 6) {    //Caso tenha mensagem em mais de um registrador(Data Number 2)
+    if (i < 2) {    //Caso tenha mensagem em mais de um registrador(Data Number 2)
       Serial.print("Mensagem recebida: ");
-      byte longbyteReceived[11];
+      byte longbyteReceived[9];
       int n = sizeof(longbyteReceived);
       for (int k = 0; k < n; k++) {
         longbyteReceived[k] = RS485Serial.read();  // Visualizacao de mensagem hexadecimal recebida no monitor Serial
@@ -68,14 +68,14 @@ void requestModbus() {
       }
       Serial.println();
 
-      for (int k = 0; k < 11; k++) {
-        if (k > 2 and k < 9) {
+      for (int k = 0; k < 9; k++) {
+        if (k > 2 and k < 7) {
           bytes2send.PushBack(longbyteReceived[k]); // Adiciona mensagem lida ao array final
         }
       }
     }
     else {  //Caso tenha mensagem em apenas um registrador(Data Number 1)
-      byte byteReceived[8];
+      byte byteReceived[7];
       Serial.print("Mensagem recebida: ");
       int n = sizeof(byteReceived);
       for (int k = 0; k < n; k++) {
@@ -86,8 +86,8 @@ void requestModbus() {
       }
       Serial.println();
 
-      for (int k = 0; k < 8; k++) {
-        if (k > 2 and k < 6) {
+      for (int k = 0; k < 7; k++) {
+        if (k > 2 and k < 5) {
           bytes2send.PushBack(byteReceived[k]); // Adiciona mensagem lida ao array final
         }
       }
@@ -96,7 +96,7 @@ void requestModbus() {
     Serial.println("#######################################################");
   }
 
-  for (int k = 0; k < 45; k++) { // Printar mensagem final
+  for (int k = 0; k < 22; k++) { // Printar mensagem final
     data[k] = (uint8_t)bytes2send[k];
     Serial.print("0x");
     Serial.print(data[k], HEX);
@@ -237,7 +237,7 @@ void do_send(osjob_t* j) {
     Serial.println(F("OP_TXRXPEND, not sending"));
   } else {
     // Prepare upstream data transmission at the next possible time.
-    LMIC_setTxData2(1, data, sizeof(data) - 1, 0);
+    LMIC_setTxData2(1, data, sizeof(data), 0);
     Serial.println(F("Packet queued"));
     Serial.println(LMIC.freq);
   }
