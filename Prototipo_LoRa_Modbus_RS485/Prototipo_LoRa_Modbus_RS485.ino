@@ -106,13 +106,13 @@ void requestModbus() {
 }
 
 /////////////////////////Configuracao de comunicacao LoRa /////////////////////////
-
-#ifdef COMPILE_REGRESSION_TEST
-# define FILLMEIN 0
-#else
-# warning "You must replace the values marked FILLMEIN with real values from the TTN control panel!"
-# define FILLMEIN (#dont edit this, edit the lines that use FILLMEIN)
-#endif
+//
+//#ifdef COMPILE_REGRESSION_TEST
+//# define FILLMEIN 0
+//#else
+//# warning "You must replace the values marked FILLMEIN with real values from the TTN control panel!"
+//# define FILLMEIN (#dont edit this, edit the lines that use FILLMEIN)
+//#endif
 
 // LoRaWAN NwkSKey, network session key
 static const PROGMEM u1_t NWKSKEY[16] = { 0x38, 0xD9, 0x78, 0x96, 0x28, 0x9C, 0x00, 0xC4, 0x2E, 0xFE, 0xF2, 0xC5, 0x49, 0xAB, 0xCD, 0xAC };
@@ -133,7 +133,7 @@ void os_getArtEui (u1_t* buf) { }
 void os_getDevEui (u1_t* buf) { }
 void os_getDevKey (u1_t* buf) { }
 
-static uint8_t mydata[] = "Hello, world!";
+//static uint8_t mydata[] = "Hello, world!";
 static osjob_t sendjob;
 
 // Schedule TX every this many seconds (might become longer due to duty
@@ -235,11 +235,14 @@ void do_send(osjob_t* j) {
   // Check if there is not a current TX/RX job running
   if (LMIC.opmode & OP_TXRXPEND) {
     Serial.println(F("OP_TXRXPEND, not sending"));
-  } else {
+  }
+  else {
+
     // Prepare upstream data transmission at the next possible time.
     LMIC_setTxData2(1, data, sizeof(data), 0);
-    Serial.println(F("Packet queued"));
+    Serial.print(F("LMIC.freq:"));
     Serial.println(LMIC.freq);
+    Serial.println(F("Packet queued"));
   }
   // Next TX is scheduled after TX_COMPLETE event.
 }
@@ -255,7 +258,7 @@ void setup() {
   /////////////////////////Setup envio LoRa /////////////////////////
   while (!Serial); // wait for Serial to be initialized
   delay(100);     // per sample code on RF_95 test
-  Serial.println(F("Starting"));
+  Serial.println(F("Connect to TTN"));
 
 #ifdef VCC_ENABLE
   // For Pinoccio Scout boards
@@ -301,6 +304,7 @@ void setup() {
 
   // Set data rate and transmit power for uplink (note: txpow seems to be ignored by the library)
   LMIC_setDrTxpow(DR_SF7, 14);
+
 
   //Comeca a receber mensagem do modbus
   requestModbus();

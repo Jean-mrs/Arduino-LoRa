@@ -10,8 +10,9 @@
 #define RS485Receive     LOW
 SoftwareSerial RS485Serial(SSerialRX, SSerialTX); // Mapeia RX, TX para o Serial do conversor
 
-byte longbyteReceived[11];
-byte byteReceived[8];
+byte longbyteReceived[9];
+byte byteReceived[9];
+byte byteReceived2[9];
 Vector<byte> bytes2send;
 //byte resquest2send[121];
 
@@ -32,11 +33,11 @@ byte msgs[13][8] = {
 };
 
 //byte msg1[8] = {0x01, 0x03, 0x00, 0x00, 0x00, 0x02, 0xC4, 0x0B}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
-//byte msg2[8] = {0x01, 0x03, 0x00, 0x01, 0x00, 0x02, 0x95, 0xCB}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
+byte msg2[8] = {0x01, 0x03, 0x00, 0x01, 0x00, 0x02, 0x95, 0xCB}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
 //byte msg3[8] = {0x01, 0x03, 0x00, 0x08, 0x00, 0x02, 0x45, 0xC9}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
-//byte msg4[8] = {0x01, 0x03, 0x00, 0x09, 0x00, 0x02, 0x14, 0x09}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
+byte msg4[8] = {0x01, 0x03, 0x00, 0x09, 0x00, 0x02, 0x14, 0x09}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
 //byte msg5[8] = {0x01, 0x03, 0x00, 0x0A, 0x00, 0x02, 0xE4, 0x09}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
-//byte msg6[8] = {0x01, 0x03, 0x00, 0x0B, 0x00, 0x02, 0xB5, 0xC9}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
+byte msg6[8] = {0x01, 0x03, 0x00, 0x0B, 0x00, 0x02, 0xB5, 0xC9}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
 //byte msg7[8] = {0x01, 0x03, 0x00, 0x0C, 0x00, 0x01, 0x44, 0x09}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
 //byte msg8[8] = {0x01, 0x03, 0x00, 0x0D, 0x00, 0x01, 0x15, 0xC9}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
 //byte msg9[8] = {0x01, 0x03, 0x00, 0x0E, 0x00, 0x01, 0xE5, 0xC9}; //meterID, functionCode, registerAddr(2 bytes), dataNumber(2bytes), checkCode(2bytes)
@@ -56,7 +57,7 @@ void setup() {
 }
 
 void loop() {
-  for (int i = 0; i < 13; i++) {
+  for (int i = 0; i < 1; i++) {
     if (RS485Serial.isListening()) {
       Serial.println("Enviando request...");
       digitalWrite(SSerialTxControl, RS485Transmit);  // Habilita RS485 para Transmitir
@@ -91,11 +92,11 @@ void loop() {
       }
       Serial.println();
 
-      for (int k = 0; k < 11; k++) {
-        if (k > 2 and k < 9) {
-          bytes2send.PushBack(longbyteReceived[k]); // Adiciona mensagem lida ao array final
-        }
-      }
+//      for (int k = 0; k < 11; k++) {
+//        if (k > 2 and k < 9) {
+//          bytes2send.PushBack(longbyteReceived[k]); // Adiciona mensagem lida ao array final
+//        }
+//      }
     }
     else {  //Caso tenha mensagem em apenas um registrador(Data Number 1)
       Serial.print("Mensagem recebida: ");
@@ -108,36 +109,35 @@ void loop() {
       }
       Serial.println();
 
-      for (int k = 0; k < 8; k++) {
-        if (k > 2 and k < 6) {
-          bytes2send.PushBack(byteReceived[k]); // Adiciona mensagem lida ao array final
-        }
-      }
+//      for (int k = 0; k < 8; k++) {
+//        if (k > 2 and k < 6) {
+//          bytes2send.PushBack(byteReceived[k]); // Adiciona mensagem lida ao array final
+//        }
+//      }
 
     }
     Serial.println();
     Serial.println("#######################################################");
   }
 
-  for (int k = 0; k < 57; k++) { // Printar mensagem final
-    Serial.print("0x");
-    Serial.print(bytes2send[k], HEX);
-    Serial.print(" ");
-  }
-  while (1) {}
-}
+//  for (int k = 0; k < 11; k++) { // Printar mensagem final
+//    Serial.print("0x");
+//    Serial.print(bytes2send[k], HEX);
+//    Serial.print(" ");
+//  }
+
 //////////////////////////////////////////////////////////////
-/*
+
   Serial.println();
   Serial.println("Enviando request...");
   digitalWrite(SSerialTxControl, RS485Transmit);  // Habilita RS485 para Transmitir
   delay(500);
-  RS485Serial.write(msg6, 8); // Escreve mensagens a enviar
+  RS485Serial.write(msg2, 8); // Escreve mensagens a enviar
   Serial.print("Mensagem enviada: ");
 
-  for (int i = 0; i < sizeof(msg6); i++) {
+  for (int i = 0; i < sizeof(msg2); i++) {
     Serial.print("0x");
-    Serial.print(msg6[i], HEX);
+    Serial.print(msg2[i], HEX);
     Serial.print(" ");
   }
 
@@ -172,11 +172,14 @@ void loop() {
                  + ((long)(byteReceived[4]) << 16)
                  + ((long)(byteReceived[5]) << 8)
                  + ((long)(byteReceived[6]));
-  //Serial.print("Tensão: ");
-  Serial.print(value_4bytes / 100.0);
+  Serial.print("Tensão: ");
+  Serial.print(value_4bytes/100.0 );
   Serial.print("(Kwh)");
 
-
+while(1){
+  
+}
+}
   /*Serial.println();
     long value_2bytes;
     value_2bytes = ((long)(byteReceived[3]) << 8)
